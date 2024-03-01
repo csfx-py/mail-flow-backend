@@ -6,7 +6,7 @@ const flowSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  name: {
+  flowName: {
     type: String,
     required: true,
     min: 3,
@@ -23,7 +23,7 @@ const flowSchema = new mongoose.Schema({
 });
 
 flowSchema.pre("save", async function (next) {
-  const flow = await this.model("Flow").findOne({ name });
+  const flow = await this.model("Flow").findOne({ flowName: this.flowName });
   if (flow) {
     throw new Error("Flow already exists");
   }
