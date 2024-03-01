@@ -5,11 +5,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const createToken = (user, secret, exp) => {
-  const { name } = user;
+  const { userName } = user;
   return jwt.sign(
     {
-      name,
-      shopName,
+      userName,
+      _id: user._id,
     },
     secret,
     { expiresIn: exp }
@@ -18,12 +18,11 @@ const createToken = (user, secret, exp) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { username, name, email, password } = req.body;
+    const { userName, email, password } = req.body;
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newUser = new User({
-      username,
-      name,
+      userName,
       email,
       password: hashedPassword,
     });
@@ -40,6 +39,7 @@ router.post("/register", async (req, res) => {
         msg: "User created",
       });
   } catch (err) {
+    console.log(err);
     res.status(500).json({
       success: false,
       msg: err,
@@ -51,9 +51,9 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    !user && res.status(400).json("Wrong credentials!");
+    if (!user) throw Error("User does not exist");
     const validated = await bcrypt.compare(password, user.password);
-    !validated && res.status(400).json("Wrong credentials!");
+    if (!validated) throw Error("Password is incorrect");
     const token = createToken(user, process.env.SECRET, "1h");
     res.status(200).cookie("token", token, { httpOnly: true }).json({
       success: true,
@@ -61,6 +61,7 @@ router.post("/login", async (req, res) => {
       msg: "User logged in",
     });
   } catch (err) {
+    console.log(err);
     res.status(500).json({
       success: false,
       msg: err,
@@ -76,6 +77,7 @@ router.get("/refresh", async (req, res) => {
     const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SEC);
     if (!verified) throw Error("Token verification failed");
 
+    console.log(verified);
     const user = await User.findById(verified._id);
     if (!user) throw Error("User does not exist");
 
@@ -113,6 +115,7 @@ router.get("/logout", async (req, res) => {
         msg: "User logged out",
       });
   } catch (err) {
+    console.log(err);
     res.status(500).json({
       success: false,
       msg: err,
