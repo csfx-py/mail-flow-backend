@@ -77,7 +77,6 @@ router.get("/refresh", async (req, res) => {
     const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SEC);
     if (!verified) throw Error("Token verification failed");
 
-    console.log(verified);
     const user = await User.findById(verified._id);
     if (!user) throw Error("User does not exist");
 
